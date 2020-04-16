@@ -33,7 +33,6 @@ function computeLogSpacing( spacing, power )
     }
 }
 computeLogSpacing( logSpacing, logSpacingFactor );
-console.log( logSpacing );
 
 function init() {
     // heading.textContent = 'sndpeek';
@@ -91,7 +90,12 @@ function init() {
     var canvas = document.querySelector('.visualizer');
     canvas.width  = window.innerWidth;
     canvas.height = window.innerHeight;
-    initCanvas( canvas );
+    // field of view: 45
+    // clipping planes: 1, 300
+    // camera pos: 0, 0, 3.5
+    // look at: 0, 0, 0
+    // camera up: 0, 1, 0
+    initCanvas( canvas, 45, 1, 300, [0, 0, 3.5], [0, 0, 0], [0, 1, 0] );
     var drawVisual;
 
 
@@ -130,7 +134,7 @@ function init() {
             var points = new Float32Array( bufferSize * 3 );
             var colors = new Float32Array( bufferSize * 3 );
 
-            var percentWidth = 0.7;
+            var percentWidth = 2.0;
             var sliceWidth = WIDTH * percentWidth / bufferSize;
             var x = -percentWidth;
 
@@ -156,7 +160,7 @@ function init() {
         function drawFreqDomain()
         {
             analyser.getByteFrequencyData( dataArray );
-            ffts.push( dataArray );
+            ffts.push( new Uint8Array( dataArray ) );
             while( ffts.length >  numFFTsToKeep )
             {
                 ffts.shift();
@@ -165,7 +169,7 @@ function init() {
             var points = new Float32Array( fftSize * 3 );
             var colors = new Float32Array( fftSize * 3 );
           
-            var percentWidth = 0.7;
+            var percentWidth = 2.0;
         
             for( var j = 0; j < ffts.length; j++ )
             {
@@ -176,8 +180,8 @@ function init() {
                 {
                     var x = percentWidth * ( 2.0 * logSpacing[i] - 1 );
                     var v = dataArray[i] / 128;
-                    var y = HEIGHT * -1.5 / 4 + v * HEIGHT / 4;
-                    var z = j * 2;
+                    var y = HEIGHT * -0.3 + v * HEIGHT / 4 + j / 16;
+                    var z = -j / 8;
                     
                     var g_wf_delay = 0;
                     var fval = ( numFFTsToKeep - g_wf_delay - j ) * 1.0 / numFFTsToKeep; 
