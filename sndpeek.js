@@ -1,5 +1,5 @@
 let heading = document.querySelector('h1');
-heading.textContent = 'CLICK ANYWHERE TO START'
+heading.textContent = 'CLICK TO PEEK SND'
 document.body.addEventListener('click', init);
 
 
@@ -7,7 +7,7 @@ var bufferSize = 1024;
 var fftSize = 512;
 var numFFTsToKeep = 48;
 var hannWindow = [];
-var logSpacingFactor = 0.6;
+var logSpacingFactor = 0.3;
 var logSpacing = [];
 var ffts = [];
 
@@ -95,7 +95,7 @@ function init() {
     // camera pos: 0, 0, 3.5
     // look at: 0, 0, 0
     // camera up: 0, 1, 0
-    initCanvas( canvas, 45, 1, 300, [0, 0, 3.5], [0, 0, 0], [0, 1, 0] );
+    initCanvas( canvas, 45, 1, 300, [0, -0.5, 3.5], [0, 0, 0], [0, 1, 0] );
     var drawVisual;
 
 
@@ -141,7 +141,7 @@ function init() {
             for( var i = 0; i < bufferSize; i++ ) 
             {
                 var v = hannWindow[i] * ( ( dataArray[i] / 128.0 ) - 1 );
-                var y = HEIGHT * 1.2 / 4 + v * HEIGHT / 8;
+                var y = HEIGHT * 0.48 + v * HEIGHT / 8;
                 var z = 0;
           
                 points[ i*3 + 0 ] = x;
@@ -165,6 +165,7 @@ function init() {
             {
                 ffts.shift();
             }
+            
           
             var points = new Float32Array( fftSize * 3 );
             var colors = new Float32Array( fftSize * 3 );
@@ -179,8 +180,8 @@ function init() {
                 for( var i = 0; i < current_fft.length; i++ )
                 {
                     var x = percentWidth * ( 2.0 * logSpacing[i] - 1 );
-                    var v = dataArray[i] / 128;
-                    var y = HEIGHT * -0.3 + v * HEIGHT / 4 + j / 16;
+                    var v = current_fft[i] / 128;
+                    var y = HEIGHT * -0.5 + v * HEIGHT / 4 + j / 16;
                     var z = -j / 8;
                     
                     var g_wf_delay = 0;
