@@ -88,17 +88,15 @@ function init() {
     // set up canvas context for visualizer
 
     var canvas = document.querySelector('.visualizer');
-    canvas.width  = window.innerWidth;
-    canvas.height = window.innerHeight;
-    // field of view: 45
-    // clipping planes: 1, 300
-    // camera pos: 0, 0, 3.5
-    // look at: 0, 0, 0
-    // camera up: 0, 1, 0
-    initCanvas( canvas, 45, 1, 300, [0, -1.0, 3.5], [0, 0, 0], [0, 1, 0] );
+    var fov = 45;
+    var clipNear = 1;
+    var clipFar = 300;
+    var cameraPos = [0, -1.0, 3.5];
+    var lookAt = [0, 0, 0];
+    var cameraUp = [0, 1, 0];
+    initCanvas( canvas, fov, clipNear, clipFar, cameraPos, lookAt, cameraUp );
+    
     var drawVisual;
-
-
     //main block for doing the audio recording
 
     if (navigator.mediaDevices.getUserMedia) {
@@ -118,7 +116,8 @@ function init() {
        console.log('getUserMedia not supported on your browser!');
     }
 
-    function visualize() {
+    function visualize()
+    {
         WIDTH = canvas.width / 1000;
         HEIGHT = canvas.height / 1000;
 
@@ -196,7 +195,6 @@ function init() {
                 }
                 
                 drawLine( gl, points, colors );
-
             }
         }
 
@@ -212,5 +210,14 @@ function init() {
         draw();
 
     }
+    
+    window.onresize = function()
+    {
+        window.cancelAnimationFrame( drawVisual );
+        resizeGL( canvas, fov, clipNear, clipFar, cameraPos, lookAt, cameraUp );
+        visualize();
+    }
   
 }
+
+

@@ -61,7 +61,14 @@ function initCanvas( canvas, fieldOfView, nearClip, farClip, cameraPos, cameraLo
     coord_location = gl.getAttribLocation( shaderProgram, "coordinates" );
     color_location = gl.getAttribLocation( shaderProgram, "color" );
     
+    resizeGL( canvas, fieldOfView, nearClip, farClip, cameraPos, cameraLookAt, cameraUp );  
+}
+
+function resizeGL( canvas, fieldOfView, nearClip, farClip, cameraPos, cameraLookAt, cameraUp )
+{
     // prepare to draw
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
     // clear color
     gl.clearColor( 0.0, 0.0, 0.0, 1.0 );
     // enable the depth test
@@ -77,8 +84,6 @@ function initCanvas( canvas, fieldOfView, nearClip, farClip, cameraPos, cameraLo
     
     var matrixLocation = gl.getUniformLocation( shaderProgram, "u_matrix" );
     gl.uniformMatrix4fv( matrixLocation, false, viewProjectionMatrix );
-    
-    return gl;
 }
 
 function initFrame( gl )
