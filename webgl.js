@@ -70,7 +70,7 @@ function initCanvas( canvas, fieldOfView, nearClip, farClip, cameraPos, cameraLo
     gl.viewport( 0,0,canvas.width,canvas.height );
     
     // projection + camera placement
-    var projectionMatrix = perspective( fieldOfView * Math.PI / 180, canvas.width / canvas.height, nearClip, farClip );
+    var projectionMatrix = m4.perspective( fieldOfView * Math.PI / 180, canvas.width / canvas.height, nearClip, farClip );
     var cameraMatrix = m4.lookAt( cameraPos, cameraLookAt, cameraUp );
     var viewMatrix = m4.inverse( cameraMatrix );
     var viewProjectionMatrix = m4.multiply( projectionMatrix, viewMatrix );
@@ -106,19 +106,6 @@ function drawLine( gl, points, colors )
     
 }
 
-
-function perspective( fieldOfViewInRadians, aspect, near, far ) 
-{
-    var f = Math.tan(Math.PI * 0.5 - 0.5 * fieldOfViewInRadians);
-    var rangeInv = 1.0 / (near - far);
- 
-    return [
-      f / aspect, 0, 0, 0,
-      0, f, 0, 0,
-      0, 0, (near + far) * rangeInv, -1,
-      0, 0, near * far * rangeInv * 2, 0
-    ];
-}
 
 
 // thanks to: https://webglfundamentals.org/webgl/lessons/webgl-3d-orthographic.html
