@@ -95,7 +95,7 @@ function init() {
     // camera pos: 0, 0, 3.5
     // look at: 0, 0, 0
     // camera up: 0, 1, 0
-    initCanvas( canvas, 45, 1, 300, [0, -0.5, 3.5], [0, 0, 0], [0, 1, 0] );
+    initCanvas( canvas, 45, 1, 300, [0, -1.0, 3.5], [0, 0, 0], [0, 1, 0] );
     var drawVisual;
 
 
@@ -119,8 +119,8 @@ function init() {
     }
 
     function visualize() {
-        WIDTH = 2; //canvas.width;
-        HEIGHT = 2; //canvas.height;
+        WIDTH = canvas.width / 1000;
+        HEIGHT = canvas.height / 1000;
 
         analyser.fftSize = bufferSize;
         var dataArray = new Uint8Array( bufferSize );
@@ -134,14 +134,14 @@ function init() {
             var points = new Float32Array( bufferSize * 3 );
             var colors = new Float32Array( bufferSize * 3 );
 
-            var percentWidth = 2.0;
-            var sliceWidth = WIDTH * percentWidth / bufferSize;
+            var percentWidth = 1.0 * WIDTH;
+            var sliceWidth = 2 * percentWidth / bufferSize;
             var x = -percentWidth;
 
             for( var i = 0; i < bufferSize; i++ ) 
             {
                 var v = hannWindow[i] * ( ( dataArray[i] / 128.0 ) - 1 );
-                var y = HEIGHT * 0.48 + v * HEIGHT / 8;
+                var y = HEIGHT * 1.0 + v * HEIGHT / 1.3;
                 var z = 0;
           
                 points[ i*3 + 0 ] = x;
@@ -170,7 +170,7 @@ function init() {
             var points = new Float32Array( fftSize * 3 );
             var colors = new Float32Array( fftSize * 3 );
           
-            var percentWidth = 2.0;
+            var percentWidth = 1.4 * WIDTH;
         
             for( var j = 0; j < ffts.length; j++ )
             {
@@ -181,7 +181,7 @@ function init() {
                 {
                     var x = percentWidth * ( 2.0 * logSpacing[i] - 1 );
                     var v = current_fft[i] / 128;
-                    var y = HEIGHT * -0.5 + v * HEIGHT / 4 + j / 16;
+                    var y = HEIGHT * -1.3 + v * HEIGHT / 4 + j / 16;
                     var z = -j / 8;
                     
                     var g_wf_delay = 0;
