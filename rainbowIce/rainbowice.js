@@ -117,6 +117,7 @@ function init() {
         var dataArray = new Uint8Array( bufferSize );
         
         var fftVisualMultiplier = 20;
+        var fftNormalizer = 8192 * 4;
         var waveformVisualMultiplier = 120;
         var xCircle = [];
         var yCircle = [];
@@ -127,7 +128,7 @@ function init() {
         var srate = 44100;
         var binHZ = srate / fftSize;
         var nInnerCircles = 43;
-        var nConeLines = nInnerCircles;
+        var nConeLines = 1;// nInnerCircles;
         var drawInnerCircles = true;
         var shouldMelt = true;
         var centroid;
@@ -149,8 +150,60 @@ function init() {
         }
         computeCircleAmounts();
 
+        function setColor( colors, index, value )
+        {
+            if( value > 0.8 )
+            {
+                // red
+                colors[index + 0] = 0.859;
+                colors[index + 1] = 0.078;
+                colors[index + 2] = 0.234;
+            }
+            else if( value > 0.66 )
+            {
+                // orange
+                colors[index + 0] = 1.0;
+                colors[index + 1] = 0.647;
+                colors[index + 2] = 0.0;
+            }
+            else if( value > 0.52 )
+            {
+                // yellow
+                colors[index + 0] = 1.0;
+                colors[index + 1] = 0.843;
+                colors[index + 2] = 0.0;
+            }
+            else if( value > 0.38 )
+            {
+                // green
+                colors[index + 0] = 0.0;
+                colors[index + 1] = 0.804;
+                colors[index + 2] = 0.0;
+            }
+            else if( value > 0.24 )
+            {
+                // blue
+                colors[index + 0] = 0.117;
+                colors[index + 1] = 0.564;
+                colors[index + 2] = 1.0;
+            }
+            else if( value > 0.1 )
+            {
+                // purple
+                colors[index + 0] = 0.490;
+                colors[index + 1] = 0.149;
+                colors[index + 2] = 0.804;
+            }
+            else
+            {
+                // white
+                colors[index + 0] = 0.98;
+                colors[index + 1] = 0.97;
+                colors[index + 2] = 0.94;
+            }
+        }
+
         // TODO:
-        // - compute circle and melt base arrays
         // - show FFTs
         // - compute spectral centroid
         // - compute moving average of spectral centroid
@@ -246,36 +299,59 @@ function init() {
             {
                 ffts.shift();
             }
+
+            if( debugme )
+            {
+                debugme = false;
+                console.log( dataArray );
+            }
             
           
             var points = new Float32Array( fftSize * 3 );
             var colors = new Float32Array( fftSize * 3 );
-          
-        
-            for( var j = 0; j < ffts.length; j++ )
+
+            // outermost circle has different rules than everything else
+            for( var i = 0; i < fftSize; i++ )
             {
-                // remember, the BACK of ffts is the most recent fft  
-                var current_fft = ffts[ ffts.length - 1 - j ];
-                
-                for( var i = 0; i < current_fft.length; i++ )
+                var fftValue = fftVisualMultiplier * Math.sqrt( dataArray[i] / fftNormalizer );
+                // squash the first and last sample of the fft to connect the circle
+                if( i == 0 || i == fftSize - 1 ) { fftValue = 0; }
+
+                // x, y, z
+                points[ i*3 + 0 ] = xCircle[i] * ( diameter + fftValue / 2.5 );
+                points[ i*3 + 1 ] = yCircle[i] * ( diameter + fftValue / 2.5 );
+                points[ i*3 + 2 ] = 0;
+                // color
+                setColor( colors, i*3, fftValue );
+            }
+            drawLine( gl, points, colors );
+          
+            // inner circles
+            if( drawInnerCircles )
+            {
+                // TODO compute melt amount
+                var meltAmount = 0;
+                for( var j = 0; j < ffts.length - 1; j++ )
                 {
-                    var x = percentWidth * ( 2.0 * logSpacing[i] - 1 );
-                    var v = current_fft[i] / 128;
-                    var y = HEIGHT * -1.3 + v * HEIGHT / 4 + j / 16;
-                    var z = -j / 8;
-                    
-                    var g_wf_delay = 0;
-                    var fval = ( numFFTsToKeep - g_wf_delay - j ) * 1.0 / numFFTsToKeep; 
-                    
-                    points[ i*3 + 0 ] = x;
-                    points[ i*3 + 1 ] = y;
-                    points[ i*3 + 2 ] = z;
-                    colors[ i*3 + 0 ] = 0.4 * fval;
-                    colors[ i*3 + 1 ] = 1.0 * fval;
-                    colors[ i*3 + 2 ] = 0.4 * fval;
+                    // remember, the BACK of ffts is the most recent fft
+                    var current_fft = ffts[ ffts.length - 1 - j ];
+
+                    for( var i = 0; i < fftSize; i++ )
+                    {
+                        var fftValue = fftVisualMultiplier * Math.sqrt( current_fft[i] / fftNormalizer );
+
+                        // x, y, z
+                        points[ i*3 + 0 ] = xCircle[i] * diameter * ( nInnerCircles - j ) / nInnerCircles;
+                        points[ i*3 + 1 ] = yCircle[i] * diameter * ( nInnerCircles - j ) / nInnerCircles
+                            - ( 1.5 * meltAmount * yMelt[(i + j*(fftSize - 17)) % fftSize]);
+                        points[ i*3 + 2 ] = -1.5 * j / nInnerCircles;
+                        // color
+                        setColor( colors, i*3, fftValue );
+                    }
+
+                    // draw line
+                    drawLine( gl, points, colors );
                 }
-                
-                drawLine( gl, points, colors );
             }
         }
 
@@ -285,7 +361,7 @@ function init() {
             drawVisual = requestAnimationFrame( draw );
             initFrame( gl );
             drawTimeDomain();
-            //drawFreqDomain();
+            drawFreqDomain();
         }
     
         draw();
