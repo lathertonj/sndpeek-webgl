@@ -143,18 +143,54 @@ function init() {
         var shouldRandomizeBoomCenters = true;
         var timeBetweenBooms = 7;
         var timeSinceBoom = 0;
-
-        function computeCircleAmounts()
+        
+        // compute circles
+        for( var i = 0; i < fftSize; i++ )
         {
-            for( var i = 0; i < fftSize; i++ )
-            {
-                xCircle[i] = Math.cos( -2 * Math.PI * Math.sqrt( i * 1.0 / (fftSize - 1)) + phaseShift);
-                yCircle[i] = Math.sin( -2 * Math.PI * Math.sqrt( i * 1.0 / (fftSize - 1)) + phaseShift);
-                yMelt[i] = ( i % 8 == 0 ) ? Math.random() : 0;
-                fftBins[i] = i * binHZ;
-            }
+            xCircle[i] = Math.cos( -2 * Math.PI * Math.sqrt( i * 1.0 / (fftSize - 1)) + phaseShift);
+            yCircle[i] = Math.sin( -2 * Math.PI * Math.sqrt( i * 1.0 / (fftSize - 1)) + phaseShift);
+            yMelt[i] = ( i % 8 == 0 ) ? Math.random() : 0;
+            fftBins[i] = i * binHZ;
         }
-        computeCircleAmounts();
+
+        
+        // respond to keypresses
+        document.onkeypress = function( keyEvent )
+        {
+            switch( keyEvent.code )
+            {
+                case "KeyC":
+                    // hide / show cone lines
+                    if( nConeLines == 1 )
+                    {
+                        nConeLines = nInnerCircles;
+                    }
+                    else
+                    {
+                        nConeLines = 1;
+                    }
+                    break;
+                case "KeyI":
+                    // hide / show inner circles
+                    drawInnerCircles = !drawInnerCircles;
+                    break;
+                case "KeyM":
+                    // melt / don't melt
+                    shouldMelt = !shouldMelt;
+                    break;
+                case "KeyB":
+                    // boom / don't boom
+                    shouldBoom = !shouldBoom;
+                    break;
+                case "KeyR":
+                    // randomize boom centers / don't
+                    shouldRandomizeBoomCenters = !shouldRandomizeBoomCenters;
+                    break;
+                default:
+                    break;
+            }
+            console.log( keyEvent );
+        }
 
         
 
@@ -325,7 +361,7 @@ function init() {
             }
 
             // decide whether to spawn a boom
-            if( timeSinceBoom >= timeBetweenBooms && currentSignalEnergy > 0.04 * fftSize )
+            if( shouldBoom && timeSinceBoom >= timeBetweenBooms && currentSignalEnergy > 0.04 * fftSize )
             {
                 var x = 0;
                 var y = 0;
@@ -361,10 +397,7 @@ function init() {
             for( var i = 0; i < booms.length; i++ )
             {
                 // draw boom
-                if( shouldBoom )
-                {
-                    boom.draw( booms[i] );
-                }
+                boom.draw( booms[i] );
 
                 // advance time on boom
                 boom.advanceTime( booms[i] );
@@ -460,6 +493,7 @@ boom = {
                 points[ k*3 + 1 ] = b.myCenterY + b.myYCircle[k] * ( b.myDiameter + 1.4 * Math.pow( i * 1.0 / b.nCircles, 0.35 ) );
                 points[ k*3 + 2 ] = 0;
                 // color needs alpha :( can I do it by multiplying intensity instead?
+                // TODO: really use alpha! either make a new program, or modify everything to use the old one
                 var colorIntensity = Math.max( 1.0 - Math.pow( i * 1.0 / b.nCircles, 0.45 ), 0.0 );
                 setColor( colors, k*3, fftValue, colorIntensity );
             }
