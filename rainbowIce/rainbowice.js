@@ -331,33 +331,30 @@ function init() {
             if( fftSum > 0 ) { spectralCentroid /= fftSum; }
           
             // inner circles
-            if( drawInnerCircles )
+            // compute melt amount
+            goalMeltAmount = shouldMelt ? Math.max( spectralCentroid / 25000 - 0.08, 0.0) : 0;
+            currentMeltAmount += ( goalMeltAmount > currentMeltAmount ? meltSlewUp : meltSlewDown )
+                * ( goalMeltAmount - currentMeltAmount );
+            for( var j = 0; j < (drawInnerCircles ? ffts.length - 1 : 1); j++ )
             {
-                // compute melt amount
-                goalMeltAmount = shouldMelt ? Math.max( spectralCentroid / 25000 - 0.08, 0.0) : 0;
-                currentMeltAmount += ( goalMeltAmount > currentMeltAmount ? meltSlewUp : meltSlewDown )
-                    * ( goalMeltAmount - currentMeltAmount );
-                for( var j = 0; j < ffts.length - 1; j++ )
+                // remember, the BACK of ffts is the most recent fft
+                var current_fft = ffts[ ffts.length - 1 - j ];
+
+                for( var i = 0; i < fftSize; i++ )
                 {
-                    // remember, the BACK of ffts is the most recent fft
-                    var current_fft = ffts[ ffts.length - 1 - j ];
+                    var fftValue = fftVisualMultiplier * current_fft[i];
 
-                    for( var i = 0; i < fftSize; i++ )
-                    {
-                        var fftValue = fftVisualMultiplier * current_fft[i];
-
-                        // x, y, z
-                        points[ i*3 + 0 ] = xCircle[i] * diameter * ( nInnerCircles - j ) / nInnerCircles;
-                        points[ i*3 + 1 ] = yCircle[i] * diameter * ( nInnerCircles - j ) / nInnerCircles
-                            - ( 1.5 * currentMeltAmount * yMelt[(i + j*(fftSize - 17)) % fftSize]);
-                        points[ i*3 + 2 ] = -1.5 * j / nInnerCircles;
-                        // color
-                        setColor( colors, i*4, fftValue );
-                    }
-
-                    // draw line
-                    drawLine( gl, points, colors );
+                    // x, y, z
+                    points[ i*3 + 0 ] = xCircle[i] * diameter * ( nInnerCircles - j ) / nInnerCircles;
+                    points[ i*3 + 1 ] = yCircle[i] * diameter * ( nInnerCircles - j ) / nInnerCircles
+                        - ( 1.5 * currentMeltAmount * yMelt[(i + j*(fftSize - 17)) % fftSize]);
+                    points[ i*3 + 2 ] = -1.5 * j / nInnerCircles;
+                    // color
+                    setColor( colors, i*4, fftValue );
                 }
+
+                // draw line
+                drawLine( gl, points, colors );
             }
 
             // decide whether to spawn a boom
