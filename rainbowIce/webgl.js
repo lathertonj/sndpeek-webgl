@@ -34,14 +34,14 @@ var color_location;
 
 function initCanvas( canvas, fieldOfView, nearClip, farClip, cameraPos, cameraLookAt, cameraUp )
 {
-    gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+    gl = canvas.getContext("webgl", { premultipliedAlpha: false }) || canvas.getContext("experimental-webgl", { premultipliedAlpha: false });
     vertex_buffer = gl.createBuffer();
     color_buffer = gl.createBuffer();
 
     // vertex shader source code
     var vertCode = 'attribute vec3 coordinates;'+
-       'attribute vec3 color;'+
-       'varying vec3 vColor;'+
+       'attribute vec4 color;'+
+       'varying vec4 vColor;'+
        'uniform mat4 u_matrix;'+
        'void main(void) {' +
           'gl_Position = u_matrix * vec4(coordinates, 1.0);' +
@@ -50,13 +50,16 @@ function initCanvas( canvas, fieldOfView, nearClip, farClip, cameraPos, cameraLo
     
     // fragment shader source code
     var fragCode = 'precision mediump float;'+
-       'varying vec3 vColor;'+
+       'varying vec4 vColor;'+
        'void main(void) {'+
-          'gl_FragColor = vec4(vColor, 1.);'+
+          'gl_FragColor = vColor;'+
+          // debug alpha channel
+          //'if( vColor.a < 0.99 ) gl_FragColor = vec4(1,0,0,1); else gl_FragColor = vec4(0,1,0,1);'+
        '}';
     
     shaderProgram = createProgram( gl, vertCode, fragCode );
     gl.useProgram( shaderProgram );
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     
     coord_location = gl.getAttribLocation( shaderProgram, "coordinates" );
     color_location = gl.getAttribLocation( shaderProgram, "color" );
@@ -92,8 +95,11 @@ function initFrame( gl )
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT ); 
 }
 
-function drawLine( gl, points, colors )
+function drawLine( gl, points, colors, transparent )
 {
+    // disable depth mask writing for transparent lines
+    if( transparent ) { gl.depthMask( false ); }
+
     // populate vertex data
     gl.bindBuffer( gl.ARRAY_BUFFER, vertex_buffer );
     gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( points ), gl.DYNAMIC_DRAW );
@@ -103,11 +109,14 @@ function drawLine( gl, points, colors )
     // populate color data
     gl.bindBuffer( gl.ARRAY_BUFFER, color_buffer );
     gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( colors ), gl.DYNAMIC_DRAW );
-    gl.vertexAttribPointer( color_location, 3, gl.FLOAT, true, 0, 0 );
+    gl.vertexAttribPointer( color_location, 4, gl.FLOAT, true, 0, 0 );
     gl.enableVertexAttribArray( color_location );
 
     // draw it
     gl.drawArrays( gl.LINE_STRIP, 0, points.length / 3 );
+
+    // reenable
+    if( transparent ) { gl.depthMask( true ); }
     
 }
 

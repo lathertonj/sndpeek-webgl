@@ -210,7 +210,7 @@ function init() {
 
         
             var points = new Float32Array( bufferSize * 3 );
-            var colors = new Float32Array( bufferSize * 3 );
+            var colors = new Float32Array( bufferSize * 4 );
 
             // compute signal energy
             currentSignalEnergy = 0;
@@ -241,9 +241,10 @@ function init() {
                     points[ i*3 + 1 ] = y;
                     points[ i*3 + 2 ] = z;
                     // brown
-                    colors[ i*3 + 0 ] = 0.804;
-                    colors[ i*3 + 1 ] = 0.608;
-                    colors[ i*3 + 2 ] = 0.114;
+                    colors[ i*4 + 0 ] = 0.804;
+                    colors[ i*4 + 1 ] = 0.608;
+                    colors[ i*4 + 2 ] = 0.114;
+                    colors[ i*4 + 3 ] = 1.0;
                     
                     lx += lxinc;
                     ly += lyinc;
@@ -270,9 +271,10 @@ function init() {
                     points[ i*3 + 1 ] = y;
                     points[ i*3 + 2 ] = z;
                     // brown
-                    colors[ i*3 + 0 ] = 0.804;
-                    colors[ i*3 + 1 ] = 0.608;
-                    colors[ i*3 + 2 ] = 0.114;
+                    colors[ i*4 + 0 ] = 0.804;
+                    colors[ i*4 + 1 ] = 0.608;
+                    colors[ i*4 + 2 ] = 0.114;
+                    colors[ i*4 + 3 ] = 1.0;
                     
                     lx += lxinc;
                     ly += lyinc;
@@ -301,7 +303,7 @@ function init() {
             }
 
             var points = new Float32Array( fftSize * 3 );
-            var colors = new Float32Array( fftSize * 3 );
+            var colors = new Float32Array( fftSize * 4 );
             var spectralCentroid = 0;
             var fftSum = 0;
 
@@ -318,7 +320,7 @@ function init() {
                 points[ i*3 + 1 ] = yCircle[i] * ( diameter + fftValue / 2.5 );
                 points[ i*3 + 2 ] = 0;
                 // color
-                setColor( colors, i*3, fftValue );
+                setColor( colors, i*4, fftValue );
 
                 // also compute spectral centroid, ignoring very quiet noise
                 spectralCentroid += Math.max( dataArray[i] - 0.005, 0 ) * fftBins[i];
@@ -352,7 +354,7 @@ function init() {
                             - ( 1.5 * currentMeltAmount * yMelt[(i + j*(fftSize - 17)) % fftSize]);
                         points[ i*3 + 2 ] = -1.5 * j / nInnerCircles;
                         // color
-                        setColor( colors, i*3, fftValue );
+                        setColor( colors, i*4, fftValue );
                     }
 
                     // draw line
@@ -392,7 +394,10 @@ function init() {
             {
                 timeSinceBoom++;
             }
+        }
 
+        function drawBooms()
+        {
             // boom animation
             for( var i = 0; i < booms.length; i++ )
             {
@@ -420,6 +425,10 @@ function init() {
         {
             drawVisual = requestAnimationFrame( draw );
             initFrame( gl );
+            // one frame too late :(
+            // for the blending to work properly, transparent things need to be rendered
+            // first, for some reason
+            drawBooms();
             drawTimeDomain();
             drawFreqDomain();
         }
@@ -471,7 +480,7 @@ boom = {
         var boomIndex = b.myTimeStep;
         var fftSize = b.myFFT.length;
         var points = new Float32Array( fftSize * 3 );
-        var colors = new Float32Array( fftSize * 3 );
+        var colors = new Float32Array( fftSize * 4 );
 
         for( var i = boomIndex; i >= Math.max( boomIndex - b.nCirclesShowing, 0 ); i-- )
         {
@@ -492,13 +501,12 @@ boom = {
                 points[ k*3 + 0 ] = b.myCenterX + b.myXCircle[k] * ( b.myDiameter + 1.4 * Math.pow( i * 1.0 / b.nCircles, 0.35 ) );
                 points[ k*3 + 1 ] = b.myCenterY + b.myYCircle[k] * ( b.myDiameter + 1.4 * Math.pow( i * 1.0 / b.nCircles, 0.35 ) );
                 points[ k*3 + 2 ] = 0;
-                // color needs alpha :( can I do it by multiplying intensity instead?
-                // TODO: really use alpha! either make a new program, or modify everything to use the old one
+                // color needs alpha
                 var colorIntensity = Math.max( 1.0 - Math.pow( i * 1.0 / b.nCircles, 0.45 ), 0.0 );
-                setColor( colors, k*3, fftValue, colorIntensity );
+                setColor( colors, k*4, fftValue, colorIntensity );
             }
 
-            drawLine( gl, points, colors );
+            drawLine( gl, points, colors, true );
         }
     }
     
@@ -507,57 +515,60 @@ boom = {
 
 function setColor( colors, index, value, intensity )
 {
-    if( typeof intensity == 'undefined' )
+    if( intensity == null )
     {
         intensity = 1.0;
     }
     if( value > 0.8 )
     {
         // red
-        colors[index + 0] = 0.859 * intensity;
-        colors[index + 1] = 0.078 * intensity;
-        colors[index + 2] = 0.234 * intensity;
+        colors[index + 0] = 0.859;
+        colors[index + 1] = 0.078;
+        colors[index + 2] = 0.234;
     }
     else if( value > 0.66 )
     {
         // orange
-        colors[index + 0] = 1.0 * intensity;
-        colors[index + 1] = 0.647 * intensity;
-        colors[index + 2] = 0.0 * intensity;
+        colors[index + 0] = 1.0;
+        colors[index + 1] = 0.647;
+        colors[index + 2] = 0.0;
     }
     else if( value > 0.52 )
     {
         // yellow
-        colors[index + 0] = 1.0 * intensity;
-        colors[index + 1] = 0.843 * intensity;
-        colors[index + 2] = 0.0 * intensity;
+        colors[index + 0] = 1.0;
+        colors[index + 1] = 0.843;
+        colors[index + 2] = 0.0;
     }
     else if( value > 0.38 )
     {
         // green
-        colors[index + 0] = 0.0 * intensity;
-        colors[index + 1] = 0.804 * intensity;
-        colors[index + 2] = 0.0 * intensity;
+        colors[index + 0] = 0.0;
+        colors[index + 1] = 0.804;
+        colors[index + 2] = 0.0;
     }
     else if( value > 0.24 )
     {
         // blue
-        colors[index + 0] = 0.117 * intensity;
-        colors[index + 1] = 0.564 * intensity;
-        colors[index + 2] = 1.0 * intensity;
+        colors[index + 0] = 0.117;
+        colors[index + 1] = 0.564;
+        colors[index + 2] = 1.0;
     }
     else if( value > 0.1 )
     {
         // purple
-        colors[index + 0] = 0.490 * intensity;
-        colors[index + 1] = 0.149 * intensity;
-        colors[index + 2] = 0.804 * intensity;
+        colors[index + 0] = 0.490;
+        colors[index + 1] = 0.149;
+        colors[index + 2] = 0.804;
     }
     else
     {
         // white
-        colors[index + 0] = 0.98 * intensity;
-        colors[index + 1] = 0.97 * intensity;
-        colors[index + 2] = 0.94 * intensity;
+        colors[index + 0] = 0.98;
+        colors[index + 1] = 0.97;
+        colors[index + 2] = 0.94;
     }
+
+    // set alpha
+    colors[index + 3] = intensity;
 }
