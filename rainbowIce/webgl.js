@@ -34,7 +34,7 @@ var color_location;
 
 function initCanvas( canvas, fieldOfView, nearClip, farClip, cameraPos, cameraLookAt, cameraUp )
 {
-    gl = canvas.getContext("webgl", { premultipliedAlpha: false }) || canvas.getContext("experimental-webgl", { premultipliedAlpha: false });
+    gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
     vertex_buffer = gl.createBuffer();
     color_buffer = gl.createBuffer();
 
@@ -59,7 +59,7 @@ function initCanvas( canvas, fieldOfView, nearClip, farClip, cameraPos, cameraLo
     
     shaderProgram = createProgram( gl, vertCode, fragCode );
     gl.useProgram( shaderProgram );
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     
     coord_location = gl.getAttribLocation( shaderProgram, "coordinates" );
     color_location = gl.getAttribLocation( shaderProgram, "color" );

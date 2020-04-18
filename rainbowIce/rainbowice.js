@@ -510,51 +510,51 @@ function setColor( colors, index, value, intensity )
     if( value > 0.8 )
     {
         // red
-        colors[index + 0] = 0.859;
-        colors[index + 1] = 0.078;
-        colors[index + 2] = 0.234;
+        colors[index + 0] = 0.859 * intensity;
+        colors[index + 1] = 0.078 * intensity;
+        colors[index + 2] = 0.234 * intensity;
     }
     else if( value > 0.66 )
     {
         // orange
-        colors[index + 0] = 1.0;
-        colors[index + 1] = 0.647;
-        colors[index + 2] = 0.0;
+        colors[index + 0] = 1.0 * intensity;
+        colors[index + 1] = 0.647 * intensity;
+        colors[index + 2] = 0.0 * intensity;
     }
     else if( value > 0.52 )
     {
         // yellow
-        colors[index + 0] = 1.0;
-        colors[index + 1] = 0.843;
-        colors[index + 2] = 0.0;
+        colors[index + 0] = 1.0 * intensity;
+        colors[index + 1] = 0.843 * intensity;
+        colors[index + 2] = 0.0 * intensity;
     }
     else if( value > 0.38 )
     {
         // green
-        colors[index + 0] = 0.0;
-        colors[index + 1] = 0.804;
-        colors[index + 2] = 0.0;
+        colors[index + 0] = 0.0 * intensity;
+        colors[index + 1] = 0.804 * intensity;
+        colors[index + 2] = 0.0 * intensity;
     }
     else if( value > 0.24 )
     {
         // blue
-        colors[index + 0] = 0.117;
-        colors[index + 1] = 0.564;
-        colors[index + 2] = 1.0;
+        colors[index + 0] = 0.117 * intensity;
+        colors[index + 1] = 0.564 * intensity;
+        colors[index + 2] = 1.0 * intensity;
     }
     else if( value > 0.1 )
     {
         // purple
-        colors[index + 0] = 0.490;
-        colors[index + 1] = 0.149;
-        colors[index + 2] = 0.804;
+        colors[index + 0] = 0.490 * intensity;
+        colors[index + 1] = 0.149 * intensity;
+        colors[index + 2] = 0.804 * intensity;
     }
     else
     {
         // white
-        colors[index + 0] = 0.98;
-        colors[index + 1] = 0.97;
-        colors[index + 2] = 0.94;
+        colors[index + 0] = 0.98 * intensity;
+        colors[index + 1] = 0.97 * intensity;
+        colors[index + 2] = 0.94 * intensity;
     }
 
     // set alpha
