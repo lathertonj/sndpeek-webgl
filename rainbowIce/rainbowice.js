@@ -131,6 +131,10 @@ function init() {
         var nConeLines = 1;// nInnerCircles;
         var drawInnerCircles = true;
         var shouldMelt = true;
+        var currentMeltAmount = 0;
+        var goalMeltAmount = 0;
+        var meltSlewUp = 0.01;
+        var meltSlewDown = 0.03;
         var centroid;
         var nOuterCircles = Math.floor( nInnerCircles * 1.5 );
         var shouldBoom = true;
@@ -204,10 +208,6 @@ function init() {
         }
 
         // TODO:
-        // - show FFTs
-        // - compute spectral centroid
-        // - compute moving average of spectral centroid
-        // - use moving average for melting
         // - compute loudness
         // - implement boom class
         // - use loudness to trigger booms
@@ -309,11 +309,15 @@ function init() {
           
             var points = new Float32Array( fftSize * 3 );
             var colors = new Float32Array( fftSize * 3 );
+            var spectralCentroid = 0;
+            var fftSum = 0;
+
 
             // outermost circle has different rules than everything else
             for( var i = 0; i < fftSize; i++ )
             {
-                var fftValue = fftVisualMultiplier * Math.sqrt( dataArray[i] / fftNormalizer );
+                var fftBaseValue = dataArray[i] / fftNormalizer;
+                var fftValue = fftVisualMultiplier * Math.sqrt( fftBaseValue );
                 // squash the first and last sample of the fft to connect the circle
                 if( i == 0 || i == fftSize - 1 ) { fftValue = 0; }
 
@@ -323,14 +327,24 @@ function init() {
                 points[ i*3 + 2 ] = 0;
                 // color
                 setColor( colors, i*3, fftValue );
+
+                // also compute spectral centroid
+                spectralCentroid += fftBaseValue * fftBins[i];
+                fftSum += fftBaseValue;
             }
+
             drawLine( gl, points, colors );
+
+            // also compute spectral centroid
+            if( fftSum > 0 ) { spectralCentroid /= fftSum; }
           
             // inner circles
             if( drawInnerCircles )
             {
-                // TODO compute melt amount
-                var meltAmount = 0;
+                // compute melt amount
+                goalMeltAmount = shouldMelt ? Math.max( spectralCentroid / 25000 - 0.08, 0.0) : 0;
+                currentMeltAmount += ( goalMeltAmount > currentMeltAmount ? meltSlewUp : meltSlewDown )
+                    * ( goalMeltAmount - currentMeltAmount );
                 for( var j = 0; j < ffts.length - 1; j++ )
                 {
                     // remember, the BACK of ffts is the most recent fft
@@ -343,7 +357,7 @@ function init() {
                         // x, y, z
                         points[ i*3 + 0 ] = xCircle[i] * diameter * ( nInnerCircles - j ) / nInnerCircles;
                         points[ i*3 + 1 ] = yCircle[i] * diameter * ( nInnerCircles - j ) / nInnerCircles
-                            - ( 1.5 * meltAmount * yMelt[(i + j*(fftSize - 17)) % fftSize]);
+                            - ( 1.5 * currentMeltAmount * yMelt[(i + j*(fftSize - 17)) % fftSize]);
                         points[ i*3 + 2 ] = -1.5 * j / nInnerCircles;
                         // color
                         setColor( colors, i*3, fftValue );
