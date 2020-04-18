@@ -5,6 +5,8 @@ document.body.addEventListener('click', init);
 
 var bufferSize = 1024;
 var fftSize = 512;
+var fftVisualMultiplier = 30;        
+var waveformVisualMultiplier = 120;
 var hannWindow = [];
 var ffts = [];
 
@@ -114,11 +116,9 @@ function init() {
         HEIGHT = canvas.height / 1000;
 
         analyser.fftSize = bufferSize;
-        var dataArray = new Uint8Array( bufferSize );
+        var dataArray = new Float32Array( bufferSize );
         
-        var fftVisualMultiplier = 20;
-        var fftNormalizer = 8192 * 4;
-        var waveformVisualMultiplier = 120;
+
         var xCircle = [];
         var yCircle = [];
         var phaseShift = 7 * Math.PI / 8;
@@ -137,9 +137,10 @@ function init() {
         var meltSlewDown = 0.03;
         var currentSignalEnergy = 0;
         var nOuterCircles = Math.floor( nInnerCircles * 1.5 );
+        var nOuterCirclesShowing = 3;
         var shouldBoom = true;
         var booms = [];
-        var shouldRandomizeBoomCenters = false;
+        var shouldRandomizeBoomCenters = true;
         var timeBetweenBooms = 7;
         var timeSinceBoom = 0;
 
@@ -169,7 +170,7 @@ function init() {
 
         function drawTimeDomain() 
         {
-            analyser.getByteTimeDomainData( dataArray );
+            analyser.getFloatTimeDomainData( dataArray );
 
         
             var points = new Float32Array( bufferSize * 3 );
@@ -179,7 +180,7 @@ function init() {
             currentSignalEnergy = 0;
             for( var i = 0; i < bufferSize; i++ )
             {
-                currentSignalEnergy += Math.pow( dataArray[i], 2 );
+                currentSignalEnergy += Math.abs( dataArray[i] );
             }
             
             for( var j = 0; j < nConeLines; j++ )
@@ -194,7 +195,7 @@ function init() {
 
                 for( var i = 0; i < bufferSize; i++ )
                 {
-                    var v = hannWindow[i] * ( ( dataArray[i] / 128.0 ) - 1 );
+                    var v = hannWindow[i] * dataArray[i];
                     var x = lx + lyinc * waveformVisualMultiplier * v;
                     var y = ly - lxinc * waveformVisualMultiplier * v;
                     var z = -10.0 * j / nConeLines;
@@ -223,7 +224,7 @@ function init() {
 
                 for( var i = 0; i < bufferSize; i++ )
                 {
-                    var v = hannWindow[i] * ( ( dataArray[i] / 128.0 ) - 1 );
+                    var v = hannWindow[i] * dataArray[i];
                     var x = lx + lyinc * waveformVisualMultiplier * v;
                     var y = ly - lxinc * waveformVisualMultiplier * v;
                     var z = -10.0 * j / nConeLines;
@@ -248,20 +249,21 @@ function init() {
     
         function drawFreqDomain()
         {
-            analyser.getByteFrequencyData( dataArray );
-            ffts.push( new Uint8Array( dataArray ) );
+            analyser.getFloatFrequencyData( dataArray );
+
+            // preprocess
+            for( var i = 0; i < dataArray.length; i++ )
+            {
+                // dB to sqrt( amplitude ratio )
+                dataArray[i] = Math.sqrt( Math.pow( 10, dataArray[i] / 20 ) * 1 );
+            }
+
+            ffts.push( new Float32Array( dataArray ) );
             while( ffts.length >  nInnerCircles )
             {
                 ffts.shift();
             }
 
-            if( debugme )
-            {
-                debugme = false;
-                console.log( dataArray );
-            }
-            
-          
             var points = new Float32Array( fftSize * 3 );
             var colors = new Float32Array( fftSize * 3 );
             var spectralCentroid = 0;
@@ -271,8 +273,7 @@ function init() {
             // outermost circle has different rules than everything else
             for( var i = 0; i < fftSize; i++ )
             {
-                var fftBaseValue = dataArray[i] / fftNormalizer;
-                var fftValue = fftVisualMultiplier * Math.sqrt( fftBaseValue );
+                var fftValue = fftVisualMultiplier * dataArray[i];
                 // squash the first and last sample of the fft to connect the circle
                 if( i == 0 || i == fftSize - 1 ) { fftValue = 0; }
 
@@ -283,9 +284,9 @@ function init() {
                 // color
                 setColor( colors, i*3, fftValue );
 
-                // also compute spectral centroid
-                spectralCentroid += fftBaseValue * fftBins[i];
-                fftSum += fftBaseValue;
+                // also compute spectral centroid, ignoring very quiet noise
+                spectralCentroid += Math.max( dataArray[i] - 0.005, 0 ) * fftBins[i];
+                fftSum += dataArray[i];
             }
 
             drawLine( gl, points, colors );
@@ -307,7 +308,7 @@ function init() {
 
                     for( var i = 0; i < fftSize; i++ )
                     {
-                        var fftValue = fftVisualMultiplier * Math.sqrt( current_fft[i] / fftNormalizer );
+                        var fftValue = fftVisualMultiplier * current_fft[i];
 
                         // x, y, z
                         points[ i*3 + 0 ] = xCircle[i] * diameter * ( nInnerCircles - j ) / nInnerCircles;
@@ -324,6 +325,7 @@ function init() {
             }
 
             // decide whether to spawn a boom
+            // if( Math.random() < 0.1 ) { console.log( currentSignalEnergy );} 
             if( timeSinceBoom >= timeBetweenBooms && currentSignalEnergy > 0.04 * fftSize )
             {
                 var x = 0;
@@ -341,15 +343,13 @@ function init() {
                 }
 
                 // construct boom
-                // give it fftSize
-                // give it fft
-                // give it n outer circles
-                // give it n outer circles showing
-                // give it diameter = Math.random() * 0.5 * diameter;
-                // give it xCircle
-                // give it yCircle
-                // give it x
-                // give it y
+                booms.push( newBoom( 
+                    dataArray, 
+                    nOuterCircles, nOuterCirclesShowing, 
+                    diameter, xCircle, yCircle, 
+                    // data actually constructed here
+                    x, y 
+                ) );
 
                 timeSinceBoom = 0;
             }
@@ -364,12 +364,23 @@ function init() {
                 // draw boom
                 if( shouldBoom )
                 {
-    
+                    boom.draw( booms[i] );
                 }
 
                 // advance time on boom
+                boom.advanceTime( booms[i] );
             }
-            // remove booms that have finished
+
+            // only keep booms that have not finished
+            var oldBooms = booms;
+            booms = [];
+            for( var i = 0; i < oldBooms.length; i++ )
+            {
+                if( !boom.doneDrawing( oldBooms[i] ) )
+                {
+                    booms.push( oldBooms[i] );
+                }
+            }
         }
 
 
@@ -404,64 +415,114 @@ function newBoom( fftValues, numCircles, numCirclesShowing, diameter, xCircle, y
         myCenterX: centerX,
         myCenterY: centerY,
         myDiameter: diameter,
-        myFFT: new Uint8Array( fftValues ),
-        myTimeStep: 3
+        myFFT: new Float32Array( fftValues ),
+        myTimeStep: 0 // or 3?
     };
 }
 
 boom = {
+    advanceTime: function( b )
+    {
+        b.myTimeStep += 1;
+        
+    },
+    doneDrawing: function( b )
+    {
+        // is boom finished drawing?
+        return b.myTimeStep > b.nCircles + b.nCirclesShowing;
+    },
+    draw: function( b )
+    {
+        // draw boom lines from the outside in
+        var boomIndex = b.myTimeStep;
+        var fftSize = b.myFFT.length;
+        var points = new Float32Array( fftSize * 3 );
+        var colors = new Float32Array( fftSize * 3 );
+
+        for( var i = boomIndex; i >= Math.max( boomIndex - b.nCirclesShowing, 0 ); i-- )
+        {
+            for( var k = 0; k < fftSize; k++ )
+            {
+                var fftValue = 0;
+                // as i increases, start to smooth out the FFT over a larger and larger window
+                for( var l = -i * 2; l < i * 2; l++ )
+                {
+                    fftValue += fftVisualMultiplier 
+                        * b.myFFT[(k + l + fftSize) % fftSize]
+                        / ( 5 * i );
+                }
+
+                // x, y, z
+                // do 0.35-root of spacing so that the circle explodes outward then
+                //  slowly moves into its final position
+                points[ i*3 + 0 ] = b.myCenterX + b.myXCircle[k] * ( b.myDiameter + 1.4 * Math.pow( i * 1.0 / b.nCircles, 0.35 ) );
+                points[ i*3 + 1 ] = b.myCenterY + b.myYCircle[k] * ( b.myDiameter + 1.4 * Math.pow( i * 1.0 / b.nCircles, 0.35 ) );
+                points[ i*3 + 2 ] = 0;
+                // color needs alpha :( can I do it by multiplying intensity instead?
+                var colorIntensity = Math.max( 1.0 - Math.pow( i * 1.0 / b.nCircles, 0.45 ), 0.0 );
+                setColor( colors, i*3, fftValue, colorIntensity );
+            }
+
+            drawLine( gl, points, colors );
+        }
+    }
     
+
 };
 
-function setColor( colors, index, value )
+function setColor( colors, index, value, intensity )
 {
+    if( typeof intensity == 'undefined' )
+    {
+        intensity = 1.0;
+    }
     if( value > 0.8 )
     {
         // red
-        colors[index + 0] = 0.859;
-        colors[index + 1] = 0.078;
-        colors[index + 2] = 0.234;
+        colors[index + 0] = 0.859 * intensity;
+        colors[index + 1] = 0.078 * intensity;
+        colors[index + 2] = 0.234 * intensity;
     }
     else if( value > 0.66 )
     {
         // orange
-        colors[index + 0] = 1.0;
-        colors[index + 1] = 0.647;
-        colors[index + 2] = 0.0;
+        colors[index + 0] = 1.0 * intensity;
+        colors[index + 1] = 0.647 * intensity;
+        colors[index + 2] = 0.0 * intensity;
     }
     else if( value > 0.52 )
     {
         // yellow
-        colors[index + 0] = 1.0;
-        colors[index + 1] = 0.843;
-        colors[index + 2] = 0.0;
+        colors[index + 0] = 1.0 * intensity;
+        colors[index + 1] = 0.843 * intensity;
+        colors[index + 2] = 0.0 * intensity;
     }
     else if( value > 0.38 )
     {
         // green
-        colors[index + 0] = 0.0;
-        colors[index + 1] = 0.804;
-        colors[index + 2] = 0.0;
+        colors[index + 0] = 0.0 * intensity;
+        colors[index + 1] = 0.804 * intensity;
+        colors[index + 2] = 0.0 * intensity;
     }
     else if( value > 0.24 )
     {
         // blue
-        colors[index + 0] = 0.117;
-        colors[index + 1] = 0.564;
-        colors[index + 2] = 1.0;
+        colors[index + 0] = 0.117 * intensity;
+        colors[index + 1] = 0.564 * intensity;
+        colors[index + 2] = 1.0 * intensity;
     }
     else if( value > 0.1 )
     {
         // purple
-        colors[index + 0] = 0.490;
-        colors[index + 1] = 0.149;
-        colors[index + 2] = 0.804;
+        colors[index + 0] = 0.490 * intensity;
+        colors[index + 1] = 0.149 * intensity;
+        colors[index + 2] = 0.804 * intensity;
     }
     else
     {
         // white
-        colors[index + 0] = 0.98;
-        colors[index + 1] = 0.97;
-        colors[index + 2] = 0.94;
+        colors[index + 0] = 0.98 * intensity;
+        colors[index + 1] = 0.97 * intensity;
+        colors[index + 2] = 0.94 * intensity;
     }
 }
