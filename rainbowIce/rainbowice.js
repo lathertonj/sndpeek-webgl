@@ -64,6 +64,7 @@ hann( hannWindow );
 function init() {
     tutorial.parentNode.removeChild( tutorial );
     document.body.removeEventListener('click', init)
+    document.body.className = "noscroll";
 
     // Older browsers might not implement mediaDevices at all, so we set an empty object first
     if (navigator.mediaDevices === undefined) {
