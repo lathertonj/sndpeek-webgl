@@ -1,5 +1,4 @@
-let heading = document.querySelector('h1');
-heading.textContent = 'CLICK TO RAINBOW ICE'
+var tutorial = document.getElementById('tutorial');
 document.body.addEventListener('click', init);
 
 
@@ -29,8 +28,7 @@ hann( hannWindow );
 
 
 function init() {
-    // heading.textContent = 'sndpeek';
-    heading.parentNode.removeChild( heading );
+    tutorial.parentNode.removeChild( tutorial );
     document.body.removeEventListener('click', init)
 
     // Older browsers might not implement mediaDevices at all, so we set an empty object first
@@ -128,7 +126,7 @@ function init() {
         var srate = 44100;
         var binHZ = srate / fftSize;
         var nInnerCircles = 43;
-        var nConeLines = 1;// nInnerCircles;
+        var nConeLines = nInnerCircles;
         var drawInnerCircles = true;
         var shouldMelt = true;
         var currentMeltAmount = 0;

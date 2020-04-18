@@ -9,7 +9,23 @@
 	
 </head>
 <body>
-    <h1>CLICK TO RAINBOW ICE</h1>
+    <div id="tutorial">
+        <h1>Rainbow Ice</h1>
+        <p>Welcome to Rainbow Ice, a lactose-free dessert!</p>
+        <p>This application is a sonic visualizer that displays information related to the time domain, the frequency domain, the spectral centroid, and the energy in the signal.</p>
+        <p><br /></p>
+        <p>Usage:</p>
+        <table>
+
+            <tr><td><p><span class="bold">i:</span></p></td> <td><p>toggles the inner ice rings, which display past FFTs</p></td></tr>
+            <tr><td><p><span class="bold">c:</span></p></td> <td><p>toggles the inner cone lines, which duplicate the waveform</p></td></tr>
+            <tr><td><p><span class="bold">m:&nbsp;</span></p></td> <td><p>toggles the meltyness, which is controlled by a slewed moving average of the spectral centroid</p></td></tr>
+            <tr><td><p><span class="bold">b:</span></p></td> <td><p>toggles the booms, which emanate from your rainbow ice on frames that have enough energy</p></td></tr>
+            <tr><td><p><span class="bold">r:</span></p></td> <td><p>toggles drawing the booms in random locations if there is more than one</p></td></tr>
+        </table>
+        <p><br /></p>
+        <p><span class="bold">Click to start!</span></p> 
+    </div>
     <canvas class="visualizer" width="640" height="400"></canvas> 
     <script src="./webgl.js"></script>
     <script src="./rainbowice.js"></script>
