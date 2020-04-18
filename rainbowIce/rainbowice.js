@@ -8,6 +8,40 @@ var fftVisualMultiplier = 30;
 var waveformVisualMultiplier = 120;
 var hannWindow = [];
 var ffts = [];
+var drawInnerCone = true;
+var drawInnerCircles = true;
+var shouldMelt = true;
+var shouldBoom = true;
+var shouldRandomizeBoomCenters = true;
+// respond to keypresses
+document.onkeypress = function( keyEvent )
+{
+    switch( keyEvent.code )
+    {
+        case "KeyC":
+            // hide / show cone lines
+            drawInnerCone = !drawInnerCone;
+            break;
+        case "KeyI":
+            // hide / show inner circles
+            drawInnerCircles = !drawInnerCircles;
+            break;
+        case "KeyM":
+            // melt / don't melt
+            shouldMelt = !shouldMelt;
+            break;
+        case "KeyB":
+            // boom / don't boom
+            shouldBoom = !shouldBoom;
+            break;
+        case "KeyR":
+            // randomize boom centers / don't
+            shouldRandomizeBoomCenters = !shouldRandomizeBoomCenters;
+            break;
+        default:
+            break;
+    }
+}
 
 var debugme = true;
 
@@ -66,7 +100,6 @@ function init() {
 
     var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     var source;
-    var stream;
 
 
     //set up the different audio nodes we will use for the app
@@ -126,9 +159,6 @@ function init() {
         var srate = 44100;
         var binHZ = srate / fftSize;
         var nInnerCircles = 43;
-        var nConeLines = nInnerCircles;
-        var drawInnerCircles = true;
-        var shouldMelt = true;
         var currentMeltAmount = 0;
         var goalMeltAmount = 0;
         var meltSlewUp = 0.01;
@@ -136,9 +166,7 @@ function init() {
         var currentSignalEnergy = 0;
         var nOuterCircles = Math.floor( nInnerCircles * 1.5 );
         var nOuterCirclesShowing = 3;
-        var shouldBoom = true;
         var booms = [];
-        var shouldRandomizeBoomCenters = true;
         var timeBetweenBooms = 7;
         var timeSinceBoom = 0;
         
@@ -151,57 +179,7 @@ function init() {
             fftBins[i] = i * binHZ;
         }
 
-        
-        // respond to keypresses
-        document.onkeypress = function( keyEvent )
-        {
-            switch( keyEvent.code )
-            {
-                case "KeyC":
-                    // hide / show cone lines
-                    if( nConeLines == 1 )
-                    {
-                        nConeLines = nInnerCircles;
-                    }
-                    else
-                    {
-                        nConeLines = 1;
-                    }
-                    break;
-                case "KeyI":
-                    // hide / show inner circles
-                    drawInnerCircles = !drawInnerCircles;
-                    break;
-                case "KeyM":
-                    // melt / don't melt
-                    shouldMelt = !shouldMelt;
-                    break;
-                case "KeyB":
-                    // boom / don't boom
-                    shouldBoom = !shouldBoom;
-                    break;
-                case "KeyR":
-                    // randomize boom centers / don't
-                    shouldRandomizeBoomCenters = !shouldRandomizeBoomCenters;
-                    break;
-                default:
-                    break;
-            }
-            console.log( keyEvent );
-        }
-
-        
-
-        // TODO:
-        // - keyboard interface
-        // - write help file
-        // --- ¿c/C: cone lines?
-        // --- i/I: inner circles
-        // --- m/M: melting
-        // --- b/B: booms
-        // --- r/R: randomize center of booms
-    
-
+        // time domain: cone
         function drawTimeDomain() 
         {
             analyser.getFloatTimeDomainData( dataArray );
@@ -217,6 +195,7 @@ function init() {
                 currentSignalEnergy += Math.abs( dataArray[i] );
             }
             
+            var nConeLines = drawInnerCone ? nInnerCircles : 1;
             for( var j = 0; j < nConeLines; j++ )
             {
                 var lx, ly, lxinc, lyinc;
@@ -283,6 +262,7 @@ function init() {
             }
         };
     
+        // freq domain: ice
         function drawFreqDomain()
         {
             analyser.getFloatFrequencyData( dataArray );
@@ -391,6 +371,7 @@ function init() {
             }
         }
 
+        // booms: fireworks!
         function drawBooms()
         {
             // boom animation
