@@ -91,8 +91,8 @@ function init() {
     initCanvas( canvas, fov, clipNear, clipFar, cameraPos, lookAt, cameraUp );
     
     var drawVisual;
+    
     //main block for doing the audio recording
-
     if (navigator.mediaDevices.getUserMedia) {
        console.log('getUserMedia supported.');
        var constraints = {audio: true}
@@ -159,8 +159,8 @@ function init() {
         
 
         // TODO:
-        // - implement boom class
         // - keyboard interface
+        // - write help file
         // --- ¿c/C: cone lines?
         // --- i/I: inner circles
         // --- m/M: melting
@@ -325,7 +325,6 @@ function init() {
             }
 
             // decide whether to spawn a boom
-            // if( Math.random() < 0.1 ) { console.log( currentSignalEnergy );} 
             if( timeSinceBoom >= timeBetweenBooms && currentSignalEnergy > 0.04 * fftSize )
             {
                 var x = 0;
@@ -347,7 +346,7 @@ function init() {
                     dataArray, 
                     nOuterCircles, nOuterCirclesShowing, 
                     diameter, xCircle, yCircle, 
-                    // data actually constructed here
+                    // data we actually constructed here
                     x, y 
                 ) );
 
@@ -407,7 +406,7 @@ function init() {
 
 function newBoom( fftValues, numCircles, numCirclesShowing, diameter, xCircle, yCircle, centerX, centerY )
 {
-    return {
+    var newBoom = {
         nCircles: numCircles,
         nCirclesShowing: numCirclesShowing,
         myXCircle: xCircle,
@@ -418,6 +417,8 @@ function newBoom( fftValues, numCircles, numCirclesShowing, diameter, xCircle, y
         myFFT: new Float32Array( fftValues ),
         myTimeStep: 0 // or 3?
     };
+    console.log( "Boom!" );
+    return newBoom;
 }
 
 boom = {
@@ -455,12 +456,12 @@ boom = {
                 // x, y, z
                 // do 0.35-root of spacing so that the circle explodes outward then
                 //  slowly moves into its final position
-                points[ i*3 + 0 ] = b.myCenterX + b.myXCircle[k] * ( b.myDiameter + 1.4 * Math.pow( i * 1.0 / b.nCircles, 0.35 ) );
-                points[ i*3 + 1 ] = b.myCenterY + b.myYCircle[k] * ( b.myDiameter + 1.4 * Math.pow( i * 1.0 / b.nCircles, 0.35 ) );
-                points[ i*3 + 2 ] = 0;
+                points[ k*3 + 0 ] = b.myCenterX + b.myXCircle[k] * ( b.myDiameter + 1.4 * Math.pow( i * 1.0 / b.nCircles, 0.35 ) );
+                points[ k*3 + 1 ] = b.myCenterY + b.myYCircle[k] * ( b.myDiameter + 1.4 * Math.pow( i * 1.0 / b.nCircles, 0.35 ) );
+                points[ k*3 + 2 ] = 0;
                 // color needs alpha :( can I do it by multiplying intensity instead?
                 var colorIntensity = Math.max( 1.0 - Math.pow( i * 1.0 / b.nCircles, 0.45 ), 0.0 );
-                setColor( colors, i*3, fftValue, colorIntensity );
+                setColor( colors, k*3, fftValue, colorIntensity );
             }
 
             drawLine( gl, points, colors );
