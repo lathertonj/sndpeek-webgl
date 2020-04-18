@@ -135,9 +135,10 @@ function init() {
         var goalMeltAmount = 0;
         var meltSlewUp = 0.01;
         var meltSlewDown = 0.03;
-        var centroid;
+        var currentSignalEnergy = 0;
         var nOuterCircles = Math.floor( nInnerCircles * 1.5 );
         var shouldBoom = true;
+        var booms = [];
         var shouldRandomizeBoomCenters = false;
         var timeBetweenBooms = 7;
         var timeSinceBoom = 0;
@@ -154,63 +155,10 @@ function init() {
         }
         computeCircleAmounts();
 
-        function setColor( colors, index, value )
-        {
-            if( value > 0.8 )
-            {
-                // red
-                colors[index + 0] = 0.859;
-                colors[index + 1] = 0.078;
-                colors[index + 2] = 0.234;
-            }
-            else if( value > 0.66 )
-            {
-                // orange
-                colors[index + 0] = 1.0;
-                colors[index + 1] = 0.647;
-                colors[index + 2] = 0.0;
-            }
-            else if( value > 0.52 )
-            {
-                // yellow
-                colors[index + 0] = 1.0;
-                colors[index + 1] = 0.843;
-                colors[index + 2] = 0.0;
-            }
-            else if( value > 0.38 )
-            {
-                // green
-                colors[index + 0] = 0.0;
-                colors[index + 1] = 0.804;
-                colors[index + 2] = 0.0;
-            }
-            else if( value > 0.24 )
-            {
-                // blue
-                colors[index + 0] = 0.117;
-                colors[index + 1] = 0.564;
-                colors[index + 2] = 1.0;
-            }
-            else if( value > 0.1 )
-            {
-                // purple
-                colors[index + 0] = 0.490;
-                colors[index + 1] = 0.149;
-                colors[index + 2] = 0.804;
-            }
-            else
-            {
-                // white
-                colors[index + 0] = 0.98;
-                colors[index + 1] = 0.97;
-                colors[index + 2] = 0.94;
-            }
-        }
+        
 
         // TODO:
-        // - compute loudness
         // - implement boom class
-        // - use loudness to trigger booms
         // - keyboard interface
         // --- ¿c/C: cone lines?
         // --- i/I: inner circles
@@ -226,6 +174,13 @@ function init() {
         
             var points = new Float32Array( bufferSize * 3 );
             var colors = new Float32Array( bufferSize * 3 );
+
+            // compute signal energy
+            currentSignalEnergy = 0;
+            for( var i = 0; i < bufferSize; i++ )
+            {
+                currentSignalEnergy += Math.pow( dataArray[i], 2 );
+            }
             
             for( var j = 0; j < nConeLines; j++ )
             {
@@ -367,6 +322,54 @@ function init() {
                     drawLine( gl, points, colors );
                 }
             }
+
+            // decide whether to spawn a boom
+            if( timeSinceBoom >= timeBetweenBooms && currentSignalEnergy > 0.04 * fftSize )
+            {
+                var x = 0;
+                var y = 0;
+                // randomize boom centers if a boom is being shown in the center
+                if( shouldRandomizeBoomCenters && booms.length != 0 )
+                {
+                    x = Math.random() + 0.8;
+                    y = Math.random() + 0.8;
+                    if( Math.random() < 0.5 ) { x *= -1; }
+                    if( Math.random() < 0.5 ) { y *= -1; }
+
+                    x *= diameter;
+                    y *= diameter;
+                }
+
+                // construct boom
+                // give it fftSize
+                // give it fft
+                // give it n outer circles
+                // give it n outer circles showing
+                // give it diameter = Math.random() * 0.5 * diameter;
+                // give it xCircle
+                // give it yCircle
+                // give it x
+                // give it y
+
+                timeSinceBoom = 0;
+            }
+            else
+            {
+                timeSinceBoom++;
+            }
+
+            // boom animation
+            for( var i = 0; i < booms.length; i++ )
+            {
+                // draw boom
+                if( shouldBoom )
+                {
+    
+                }
+
+                // advance time on boom
+            }
+            // remove booms that have finished
         }
 
 
@@ -391,4 +394,74 @@ function init() {
   
 }
 
+function newBoom( fftValues, numCircles, numCirclesShowing, diameter, xCircle, yCircle, centerX, centerY )
+{
+    return {
+        nCircles: numCircles,
+        nCirclesShowing: numCirclesShowing,
+        myXCircle: xCircle,
+        myYCircle: yCircle,
+        myCenterX: centerX,
+        myCenterY: centerY,
+        myDiameter: diameter,
+        myFFT: new Uint8Array( fftValues ),
+        myTimeStep: 3
+    };
+}
 
+boom = {
+    
+};
+
+function setColor( colors, index, value )
+{
+    if( value > 0.8 )
+    {
+        // red
+        colors[index + 0] = 0.859;
+        colors[index + 1] = 0.078;
+        colors[index + 2] = 0.234;
+    }
+    else if( value > 0.66 )
+    {
+        // orange
+        colors[index + 0] = 1.0;
+        colors[index + 1] = 0.647;
+        colors[index + 2] = 0.0;
+    }
+    else if( value > 0.52 )
+    {
+        // yellow
+        colors[index + 0] = 1.0;
+        colors[index + 1] = 0.843;
+        colors[index + 2] = 0.0;
+    }
+    else if( value > 0.38 )
+    {
+        // green
+        colors[index + 0] = 0.0;
+        colors[index + 1] = 0.804;
+        colors[index + 2] = 0.0;
+    }
+    else if( value > 0.24 )
+    {
+        // blue
+        colors[index + 0] = 0.117;
+        colors[index + 1] = 0.564;
+        colors[index + 2] = 1.0;
+    }
+    else if( value > 0.1 )
+    {
+        // purple
+        colors[index + 0] = 0.490;
+        colors[index + 1] = 0.149;
+        colors[index + 2] = 0.804;
+    }
+    else
+    {
+        // white
+        colors[index + 0] = 0.98;
+        colors[index + 1] = 0.97;
+        colors[index + 2] = 0.94;
+    }
+}
