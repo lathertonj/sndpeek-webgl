@@ -149,6 +149,7 @@ function init() {
 
         analyser.fftSize = bufferSize;
         var dataArray = new Float32Array( bufferSize );
+        var dataUint8Array = new Uint8Array( bufferSize );
         
 
         var xCircle = [];
@@ -183,8 +184,18 @@ function init() {
         // time domain: cone
         function drawTimeDomain() 
         {
-            analyser.getFloatTimeDomainData( dataArray );
-
+            if( analyser.getFloatTimeDomainData )
+            {
+                analyser.getFloatTimeDomainData( dataArray );
+            }
+            else
+            {
+                analyser.getByteTimeDomainData( dataUint8Array );
+                for( var i = 0; i < dataArray.length; i++ )
+                {
+                    dataArray[i] = dataUint8Array[i] / 128.0 - 1;
+                }
+            }
         
             var points = new Float32Array( bufferSize * 3 );
             var colors = new Float32Array( bufferSize * 4 );
